@@ -1,0 +1,1552 @@
+{
+  "info": {
+    "_postman_id": "tournament-engine-api",
+    "name": "Tournament Engine API",
+    "description": "Postman collection for the World Cup 2026 Tournament Engine backend.\n\n## Setup\n1. Import this collection into Postman.\n2. Ensure the API is running: `npm run start:dev`\n3. Default `baseUrl` is `http://localhost:3000`\n\n## Variables\nCollection variables are auto-populated when you run Create requests:\n- `tournamentId`\n- `teamId`\n- `groupId`\n- `matchId`\n- `accessToken` (after login)\n\n## Recommended flow\n1. Seed World Cup 2026\n2. Generate Tournament Group Stage Fixtures\n3. Get Group Fixtures → Schedule Match → Submit Match Result → Get Group Standings → Get Qualified Teams → Generate Round of 32 → Submit Knockout Results → Generate Next Round",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "tournamentId",
+      "value": ""
+    },
+    {
+      "key": "teamId",
+      "value": ""
+    },
+    {
+      "key": "groupId",
+      "value": ""
+    },
+    {
+      "key": "matchId",
+      "value": ""
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password1!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate and store accessToken in collection variables."
+          }
+        },
+        {
+          "name": "Refresh Tokens",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"YOUR_REFRESH_TOKEN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh-tokens",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh-tokens"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password1!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users?limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User By Id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "USER_ID"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "USER_ID"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "USER_ID"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tournaments",
+      "item": [
+        {
+          "name": "Seed World Cup 2026",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.tournament && json.tournament.id) {",
+                  "        pm.collectionVariables.set('tournamentId', json.tournament.id);",
+                  "    }",
+                  "    if (json.groups && json.groups.length > 0) {",
+                  "        pm.collectionVariables.set('groupId', json.groups[0].groupId);",
+                  "    }",
+                  "    if (json.groups && json.groups[0] && json.groups[0].teams.length > 0) {",
+                  "        pm.collectionVariables.set('teamId', json.groups[0].teams[0].teamId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tournaments/seed/world-cup-2026",
+              "host": ["{{baseUrl}}"],
+              "path": ["tournaments", "seed", "world-cup-2026"]
+            },
+            "description": "Seeds FIFA World Cup 2026 from src/data/world-cup-2026-groups.json.\nCreates tournament, 12 groups, 48 teams, and group assignments.\nSafe to re-run: existing records are reused."
+          }
+        },
+        {
+          "name": "Create Tournament",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    const id = json._id || json.id;",
+                  "    if (id) pm.collectionVariables.set('tournamentId', id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"FIFA World Cup 2026\",\n  \"year\": 2026\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tournaments",
+              "host": ["{{baseUrl}}"],
+              "path": ["tournaments"]
+            }
+          }
+        },
+        {
+          "name": "Get All Tournaments",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tournaments",
+              "host": ["{{baseUrl}}"],
+              "path": ["tournaments"]
+            }
+          }
+        },
+        {
+          "name": "Get Tournament By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tournaments/{{tournamentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tournaments", "{{tournamentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Tournament",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"group_stage\",\n  \"teamsCount\": 48,\n  \"groupsCount\": 12,\n  \"teamsPerGroup\": 4,\n  \"qualifiedPerGroup\": 2,\n  \"bestThirdCount\": 8\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tournaments/{{tournamentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tournaments", "{{tournamentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Tournament",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/tournaments/{{tournamentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tournaments", "{{tournamentId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teams",
+      "item": [
+        {
+          "name": "Create Team",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    const id = json._id || json.id;",
+                  "    if (id) pm.collectionVariables.set('teamId', id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Egypt\",\n  \"code\": \"EGY\",\n  \"confederation\": \"CAF\",\n  \"fifaRanking\": 36\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["teams"]
+            }
+          }
+        },
+        {
+          "name": "Get All Teams",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["teams"]
+            }
+          }
+        },
+        {
+          "name": "Search Teams",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/teams?search=egy",
+              "host": ["{{baseUrl}}"],
+              "path": ["teams"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "egy",
+                  "description": "Case-insensitive search by name or code"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Team By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/teams/{{teamId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["teams", "{{teamId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Team",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fifaRanking\": 32,\n  \"flagUrl\": \"https://example.com/flags/egy.png\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/teams/{{teamId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["teams", "{{teamId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Team",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/teams/{{teamId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["teams", "{{teamId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Groups",
+      "item": [
+        {
+          "name": "Create Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    const id = json._id || json.id;",
+                  "    if (id) pm.collectionVariables.set('groupId', id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": \"{{tournamentId}}\",\n  \"name\": \"Group A\",\n  \"code\": \"A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["groups"]
+            },
+            "description": "Run Create Tournament first so tournamentId is set."
+          }
+        },
+        {
+          "name": "Get All Groups",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["groups"]
+            }
+          }
+        },
+        {
+          "name": "Get Groups By Tournament",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/groups?tournamentId={{tournamentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["groups"],
+              "query": [
+                {
+                  "key": "tournamentId",
+                  "value": "{{tournamentId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Group By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["groups", "{{groupId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["groups", "{{groupId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Group",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["groups", "{{groupId}}"]
+            }
+          }
+        },
+        {
+          "name": "Assign Team To Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": \"{{teamId}}\",\n  \"seed\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["groups", "{{groupId}}", "teams"]
+            },
+            "description": "Run Create Tournament, Create Team, and Create Group first."
+          }
+        },
+        {
+          "name": "Get Group Teams",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["groups", "{{groupId}}", "teams"]
+            }
+          }
+        },
+        {
+          "name": "Remove Team From Group",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/groups/{{groupId}}/teams/{{teamId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["groups", "{{groupId}}", "teams", "{{teamId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Matches",
+      "item": [
+        {
+          "name": "Generate Group Fixtures",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.matches && json.matches.length > 0) {",
+                  "        const match = json.matches[0];",
+                  "        const id = match._id || match.id;",
+                  "        if (id) pm.collectionVariables.set('matchId', id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/matches/generate/group/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "generate", "group", "{{groupId}}"]
+            },
+            "description": "Generate 6 round-robin group-stage fixtures for one group.\nRequires group to have exactly 4 teams assigned."
+          }
+        },
+        {
+          "name": "Generate Tournament Group Stage Fixtures",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.matches && json.matches.length > 0) {",
+                  "        const match = json.matches[0];",
+                  "        const id = match._id || match.id;",
+                  "        if (id) pm.collectionVariables.set('matchId', id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/matches/generate/tournament/{{tournamentId}}/group-stage",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "generate", "tournament", "{{tournamentId}}", "group-stage"]
+            },
+            "description": "Generate group-stage fixtures for all groups in a tournament.\nSkips groups that already have fixtures."
+          }
+        },
+        {
+          "name": "Get Fixtures By Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (Array.isArray(json) && json.length > 0) {",
+                  "        const match = json[0];",
+                  "        const id = match._id || match.id;",
+                  "        if (id) pm.collectionVariables.set('matchId', id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/matches/group/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "group", "{{groupId}}"]
+            },
+            "description": "Get all matches for a group ordered by matchNumber."
+          }
+        },
+        {
+          "name": "Get All Matches",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/matches",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches"]
+            }
+          }
+        },
+        {
+          "name": "Get Matches By Tournament",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/matches?tournamentId={{tournamentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches"],
+              "query": [
+                {
+                  "key": "tournamentId",
+                  "value": "{{tournamentId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Matches By Group Filter",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/matches?groupId={{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches"],
+              "query": [
+                {
+                  "key": "groupId",
+                  "value": "{{groupId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Matches By Round",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/matches?round=group",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches"],
+              "query": [
+                {
+                  "key": "round",
+                  "value": "group"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Matches By Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/matches?status=scheduled",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "scheduled"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Match",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    const id = json._id || json.id;",
+                  "    if (id) pm.collectionVariables.set('matchId', id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": \"{{tournamentId}}\",\n  \"groupId\": \"{{groupId}}\",\n  \"round\": \"group\",\n  \"matchNumber\": 1,\n  \"homeTeamId\": \"{{teamId}}\",\n  \"awayTeamId\": \"TEAM_ID_2\",\n  \"status\": \"scheduled\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches"]
+            },
+            "description": "Manually create a match. Replace TEAM_ID_2 with a second team id."
+          }
+        },
+        {
+          "name": "Get Match By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}"]
+            }
+          }
+        },
+        {
+          "name": "Schedule Match",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchDate\": \"2026-06-11T21:00:00+03:00\",\n  \"stadium\": \"Estadio Azteca\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/schedule",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}", "schedule"]
+            },
+            "description": "Schedule a match with date and stadium.\nCannot schedule completed or cancelled matches."
+          }
+        },
+        {
+          "name": "Submit Match Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeScore\": 2,\n  \"awayScore\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/result",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}", "result"]
+            },
+            "description": "Submit match result and mark match as completed.\nSets winner/loser for group-stage matches.\nCannot submit for completed or cancelled matches."
+          }
+        },
+        {
+          "name": "Submit Knockout Result - Full Time",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeScore\": 2,\n  \"awayScore\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/result",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}", "result"]
+            },
+            "description": "Submit knockout result decided in full time."
+          }
+        },
+        {
+          "name": "Submit Knockout Result - Extra Time",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeScore\": 1,\n  \"awayScore\": 1,\n  \"hasExtraTime\": true,\n  \"extraTimeHomeScore\": 2,\n  \"extraTimeAwayScore\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/result",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}", "result"]
+            },
+            "description": "Submit knockout result decided after extra time."
+          }
+        },
+        {
+          "name": "Submit Knockout Result - Penalties",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeScore\": 1,\n  \"awayScore\": 1,\n  \"hasExtraTime\": true,\n  \"extraTimeHomeScore\": 1,\n  \"extraTimeAwayScore\": 1,\n  \"hasPenalties\": true,\n  \"penaltiesHomeScore\": 5,\n  \"penaltiesAwayScore\": 4\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/result",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}", "result"]
+            },
+            "description": "Submit knockout result decided by penalty shootout."
+          }
+        },
+        {
+          "name": "Update Match",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeScore\": 2,\n  \"awayScore\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}"]
+            },
+            "description": "Update match details. Set scores before marking as completed."
+          }
+        },
+        {
+          "name": "Update Match Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"live\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}", "status"]
+            },
+            "description": "Update match status. Use live, completed, scheduled, or cancelled.\nFor completed, homeScore and awayScore must already exist on the match."
+          }
+        },
+        {
+          "name": "Update Match Status - Completed",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}", "status"]
+            },
+            "description": "Mark match as completed. Run Update Match first to set scores."
+          }
+        },
+        {
+          "name": "Delete Match",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Standings",
+      "item": [
+        {
+          "name": "Get Standings By Group",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/standings/group/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["standings", "group", "{{groupId}}"]
+            },
+            "description": "Calculate group standings dynamically from completed group matches."
+          }
+        },
+        {
+          "name": "Get Standings By Tournament",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/standings/tournament/{{tournamentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["standings", "tournament", "{{tournamentId}}"]
+            },
+            "description": "Calculate standings for all groups in a tournament."
+          }
+        },
+        {
+          "name": "Get Standings With Filters",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/standings?groupId={{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["standings"],
+              "query": [
+                {
+                  "key": "groupId",
+                  "value": "{{groupId}}"
+                },
+                {
+                  "key": "tournamentId",
+                  "value": "{{tournamentId}}",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Optional filter endpoint. Use groupId or tournamentId query param."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Qualifications",
+      "item": [
+        {
+          "name": "Get Qualified Teams",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/qualifications/tournaments/{{tournamentId}}/qualified-teams",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "qualifications",
+                "tournaments",
+                "{{tournamentId}}",
+                "qualified-teams"
+              ]
+            },
+            "description": "Preview all 32 qualified teams (24 automatic + 8 best third-place)."
+          }
+        },
+        {
+          "name": "Get Third-Place Ranking",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/qualifications/tournaments/{{tournamentId}}/third-place-ranking",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "qualifications",
+                "tournaments",
+                "{{tournamentId}}",
+                "third-place-ranking"
+              ]
+            },
+            "description": "Rank all third-place teams across groups. Top 8 are marked qualified."
+          }
+        },
+        {
+          "name": "Get Group Winners",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/qualifications/tournaments/{{tournamentId}}/group-winners",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "qualifications",
+                "tournaments",
+                "{{tournamentId}}",
+                "group-winners"
+              ]
+            },
+            "description": "Get top 2 teams from each group (A1, A2, B1, B2, etc.)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Knockouts",
+      "item": [
+        {
+          "name": "Generate Next Round - Round of 16",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentRound\": \"round_32\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/generate-next-round",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "generate-next-round"
+              ]
+            },
+            "description": "Generate Round of 16 (matches 89-96) after all Round of 32 matches are completed."
+          }
+        },
+        {
+          "name": "Generate Next Round - Quarter Final",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentRound\": \"round_16\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/generate-next-round",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "generate-next-round"
+              ]
+            },
+            "description": "Generate Quarter Finals (matches 97-100) after all Round of 16 matches are completed."
+          }
+        },
+        {
+          "name": "Generate Next Round - Semi Final",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentRound\": \"quarter_final\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/generate-next-round",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "generate-next-round"
+              ]
+            },
+            "description": "Generate Semi Finals (matches 101-102) after all Quarter Final matches are completed."
+          }
+        },
+        {
+          "name": "Generate Next Round - Final and Third Place",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentRound\": \"semi_final\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/generate-next-round",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "generate-next-round"
+              ]
+            },
+            "description": "Generate Third Place (103) and Final (104) after both Semi Final matches are completed."
+          }
+        },
+        {
+          "name": "Get Knockout Bracket",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/bracket",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "bracket"
+              ]
+            },
+            "description": "Get all knockout matches grouped by round."
+          }
+        },
+        {
+          "name": "Get Knockout Round - Round of 32",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/rounds/round_32",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "round_32"
+              ]
+            },
+            "description": "Get knockout matches for Round of 32."
+          }
+        },
+        {
+          "name": "Get Knockout Round - Round of 16",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/rounds/round_16",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "round_16"
+              ]
+            },
+            "description": "Get knockout matches for Round of 16."
+          }
+        },
+        {
+          "name": "Get Knockout Round - Quarter Final",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/rounds/quarter_final",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "quarter_final"
+              ]
+            },
+            "description": "Get knockout matches for Quarter Finals."
+          }
+        },
+        {
+          "name": "Get Knockout Round - Semi Final",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/rounds/semi_final",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "semi_final"
+              ]
+            },
+            "description": "Get knockout matches for Semi Finals."
+          }
+        },
+        {
+          "name": "Get Knockout Round - Third Place",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/rounds/third_place",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "third_place"
+              ]
+            },
+            "description": "Get Third Place match."
+          }
+        },
+        {
+          "name": "Get Knockout Round - Final",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/knockouts/tournaments/{{tournamentId}}/rounds/final",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "knockouts",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "final"
+              ]
+            },
+            "description": "Get Final match."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Brackets",
+      "item": [
+        {
+          "name": "Get Qualified Teams",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/brackets/tournaments/{{tournamentId}}/qualified-teams",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "brackets",
+                "tournaments",
+                "{{tournamentId}}",
+                "qualified-teams"
+              ]
+            },
+            "description": "Preview qualification map (A1, A2, BEST_THIRD_1, etc.) without creating matches."
+          }
+        },
+        {
+          "name": "Generate Round of 32",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/brackets/tournaments/{{tournamentId}}/round-of-32",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "brackets",
+                "tournaments",
+                "{{tournamentId}}",
+                "round-of-32"
+              ]
+            },
+            "description": "Generate 16 Round of 32 knockout matches after all group-stage matches are completed."
+          }
+        },
+        {
+          "name": "Get Bracket Round - Round of 32",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/brackets/tournaments/{{tournamentId}}/rounds/round_32",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "brackets",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "round_32"
+              ]
+            },
+            "description": "Get Round of 32 bracket with match and slot metadata."
+          }
+        },
+        {
+          "name": "Get Bracket Round - Round of 16",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/brackets/tournaments/{{tournamentId}}/rounds/round_16",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "brackets",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "round_16"
+              ]
+            },
+            "description": "Get Round of 16 bracket with match and slot metadata."
+          }
+        },
+        {
+          "name": "Get Bracket Round - Quarter Final",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/brackets/tournaments/{{tournamentId}}/rounds/quarter_final",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "brackets",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "quarter_final"
+              ]
+            },
+            "description": "Get Quarter Final bracket with match and slot metadata."
+          }
+        },
+        {
+          "name": "Get Bracket Round - Semi Final",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/brackets/tournaments/{{tournamentId}}/rounds/semi_final",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "brackets",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "semi_final"
+              ]
+            },
+            "description": "Get Semi Final bracket with match and slot metadata."
+          }
+        },
+        {
+          "name": "Get Bracket Round - Third Place",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/brackets/tournaments/{{tournamentId}}/rounds/third_place",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "brackets",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "third_place"
+              ]
+            },
+            "description": "Get Third Place bracket with match and slot metadata."
+          }
+        },
+        {
+          "name": "Get Bracket Round - Final",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/brackets/tournaments/{{tournamentId}}/rounds/final",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "brackets",
+                "tournaments",
+                "{{tournamentId}}",
+                "rounds",
+                "final"
+              ]
+            },
+            "description": "Get Final bracket with match and slot metadata."
+          }
+        }
+      ]
+    }
+  ]
+}

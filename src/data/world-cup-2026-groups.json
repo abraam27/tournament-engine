@@ -1,0 +1,113 @@
+{
+  "tournament": "FIFA World Cup 2026",
+  "groups": [
+    {
+      "group": "A",
+      "teams": [
+        {"name": "Mexico", "code": "MEX", "confederation": "CONCACAF", "status": "Host", "fifaRanking": 15, "flagUrl": "https://flagcdn.com"},
+        {"name": "South Korea", "code": "KOR", "confederation": "AFC", "fifaRanking": 25, "flagUrl": "https://flagcdn.com"},
+        {"name": "South Africa", "code": "RSA", "confederation": "CAF", "fifaRanking": 59, "flagUrl": "https://flagcdn.com"},
+        {"name": "Czechia", "code": "CZE", "confederation": "UEFA", "fifaRanking": 41, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "B",
+      "teams": [
+        {"name": "Canada", "code": "CAN", "confederation": "CONCACAF", "status": "Host", "fifaRanking": 30, "flagUrl": "https://flagcdn.com"},
+        {"name": "Switzerland", "code": "SUI", "confederation": "UEFA", "fifaRanking": 19, "flagUrl": "https://flagcdn.com"},
+        {"name": "Qatar", "code": "QAT", "confederation": "AFC", "fifaRanking": 34, "flagUrl": "https://flagcdn.com"},
+        {"name": "Bosnia and Herzegovina", "code": "BIH", "confederation": "UEFA", "fifaRanking": 74, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "C",
+      "teams": [
+        {"name": "Brazil", "code": "BRA", "confederation": "CONMEBOL", "fifaRanking": 6, "flagUrl": "https://flagcdn.com"},
+        {"name": "Morocco", "code": "MAR", "confederation": "CAF", "fifaRanking": 7, "flagUrl": "https://flagcdn.com"},
+        {"name": "Scotland", "code": "SCO", "confederation": "UEFA", "fifaRanking": 43, "flagUrl": "https://flagcdn.com"},
+        {"name": "Haiti", "code": "HAI", "confederation": "CONCACAF", "fifaRanking": 86, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "D",
+      "teams": [
+        {"name": "United States", "code": "USA", "confederation": "CONCACAF", "status": "Host", "fifaRanking": 16, "flagUrl": "https://flagcdn.com"},
+        {"name": "Paraguay", "code": "PAR", "confederation": "CONMEBOL", "fifaRanking": 40, "flagUrl": "https://flagcdn.com"},
+        {"name": "Australia", "code": "AUS", "confederation": "AFC", "fifaRanking": 27, "flagUrl": "https://flagcdn.com"},
+        {"name": "Turkiye", "code": "TUR", "confederation": "UEFA", "fifaRanking": 22, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "E",
+      "teams": [
+        {"name": "Germany", "code": "GER", "confederation": "UEFA", "fifaRanking": 10, "flagUrl": "https://flagcdn.com"},
+        {"name": "Ecuador", "code": "ECU", "confederation": "CONMEBOL", "fifaRanking": 23, "flagUrl": "https://flagcdn.com"},
+        {"name": "Ivory Coast", "code": "CIV", "confederation": "CAF", "fifaRanking": 33, "flagUrl": "https://flagcdn.com"},
+        {"name": "Curacao", "code": "CUW", "confederation": "CONCACAF", "fifaRanking": 85, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "F",
+      "teams": [
+        {"name": "Netherlands", "code": "NED", "confederation": "UEFA", "fifaRanking": 8, "flagUrl": "https://flagcdn.com"},
+        {"name": "Japan", "code": "JPN", "confederation": "AFC", "fifaRanking": 18, "flagUrl": "https://flagcdn.com"},
+        {"name": "Tunisia", "code": "TUN", "confederation": "CAF", "fifaRanking": 44, "flagUrl": "https://flagcdn.com"},
+        {"name": "Sweden", "code": "SWE", "confederation": "UEFA", "fifaRanking": 37, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "G",
+      "teams": [
+        {"name": "Belgium", "code": "BEL", "confederation": "UEFA", "fifaRanking": 9, "flagUrl": "https://flagcdn.com"},
+        {"name": "Iran", "code": "IRN", "confederation": "AFC", "fifaRanking": 21, "flagUrl": "https://flagcdn.com"},
+        {"name": "Egypt", "code": "EGY", "confederation": "CAF", "fifaRanking": 29, "flagUrl": "https://flagcdn.com"},
+        {"name": "New Zealand", "code": "NZL", "confederation": "OFC", "fifaRanking": 84, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "H",
+      "teams": [
+        {"name": "Spain", "code": "ESP", "confederation": "UEFA", "fifaRanking": 2, "flagUrl": "https://flagcdn.com"},
+        {"name": "Uruguay", "code": "URU", "confederation": "CONMEBOL", "fifaRanking": 17, "flagUrl": "https://flagcdn.com"},
+        {"name": "Saudi Arabia", "code": "KSA", "confederation": "AFC", "fifaRanking": 56, "flagUrl": "https://flagcdn.com"},
+        {"name": "Cape Verde", "code": "CPV", "confederation": "CAF", "fifaRanking": 65, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "I",
+      "teams": [
+        {"name": "France", "code": "FRA", "confederation": "UEFA", "fifaRanking": 3, "flagUrl": "https://flagcdn.com"},
+        {"name": "Senegal", "code": "SEN", "confederation": "CAF", "fifaRanking": 15, "flagUrl": "https://flagcdn.com"},
+        {"name": "Norway", "code": "NOR", "confederation": "UEFA", "fifaRanking": 31, "flagUrl": "https://flagcdn.com"},
+        {"name": "Iraq", "code": "IRQ", "confederation": "AFC", "fifaRanking": 55, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "J",
+      "teams": [
+        {"name": "Argentina", "code": "ARG", "confederation": "CONMEBOL", "fifaRanking": 1, "flagUrl": "https://flagcdn.com"},
+        {"name": "Austria", "code": "AUT", "confederation": "UEFA", "fifaRanking": 24, "flagUrl": "https://flagcdn.com"},
+        {"name": "Algeria", "code": "ALG", "confederation": "CAF", "fifaRanking": 28, "flagUrl": "https://flagcdn.com"},
+        {"name": "Jordan", "code": "JOR", "confederation": "AFC", "fifaRanking": 68, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "K",
+      "teams": [
+        {"name": "Portugal", "code": "POR", "confederation": "UEFA", "fifaRanking": 5, "flagUrl": "https://flagcdn.com"},
+        {"name": "Colombia", "code": "COL", "confederation": "CONMEBOL", "fifaRanking": 13, "flagUrl": "https://flagcdn.com"},
+        {"name": "Uzbekistan", "code": "UZB", "confederation": "AFC", "fifaRanking": 50, "flagUrl": "https://flagcdn.com"},
+        {"name": "DR Congo", "code": "COD", "confederation": "CAF", "fifaRanking": 46, "flagUrl": "https://flagcdn.com"}
+      ]
+    },
+    {
+      "group": "L",
+      "teams": [
+        {"name": "England", "code": "ENG", "confederation": "UEFA", "fifaRanking": 4, "flagUrl": "https://flagcdn.com"},
+        {"name": "Croatia", "code": "CRO", "confederation": "UEFA", "fifaRanking": 11, "flagUrl": "https://flagcdn.com"},
+        {"name": "Ghana", "code": "GHA", "confederation": "CAF", "fifaRanking": 64, "flagUrl": "https://flagcdn.com"},
+        {"name": "Panama", "code": "PAN", "confederation": "CONCACAF", "fifaRanking": 32, "flagUrl": "https://flagcdn.com"}
+      ]
+    }
+  ]
+}
