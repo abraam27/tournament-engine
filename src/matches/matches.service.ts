@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model, Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Match } from './schemas/match.schema';
 import { Tournament } from 'src/tournaments/schemas/tournament.schema';
 import { Group } from 'src/groups/schemas/group.schema';
@@ -329,7 +329,7 @@ export class MatchesService {
     const createdMatches: Match[] = [];
     for (const fixture of fixtures) {
       const match = await this.matchModel.create({
-        tournamentId: new Types.ObjectId(group.tournamentId.toString()),
+        tournamentId: tournament._id,
         groupId: group._id,
         round: MatchRound.GROUP,
         matchNumber: nextMatchNumber++,
@@ -349,7 +349,7 @@ export class MatchesService {
 
     return {
       groupId,
-      tournamentId: group.tournamentId.toString(),
+      tournamentId: tournament._id.toString(),
       createdMatchesCount: populatedMatches.length,
       matches: populatedMatches,
     };
@@ -434,12 +434,16 @@ export class MatchesService {
       throw new NotFoundException(`Group with id "${groupId}" not found`);
     }
 
+    const tournamentId =
+      group.tournamentId instanceof Types.ObjectId
+        ? group.tournamentId
+        : group.tournamentId._id;
     const tournament = await this.tournamentModel
-      .findById(group.tournamentId)
+      .findById(tournamentId)
       .exec();
     if (!tournament) {
       throw new NotFoundException(
-        `Tournament with id "${group.tournamentId.toString()}" not found`,
+        `Tournament with id "${tournamentId.toString()}" not found`,
       );
     }
 
@@ -454,7 +458,13 @@ export class MatchesService {
       );
     }
 
-    const teamIds = groupTeams.map((groupTeam) => groupTeam.teamId.toString());
+    const teamIds = groupTeams.map((groupTeam) => {
+      const teamId =
+        groupTeam.teamId instanceof Types.ObjectId
+          ? groupTeam.teamId
+          : groupTeam.teamId._id;
+      return teamId.toString();
+    });
     return { group, tournament, teamIds };
   }
 
@@ -509,7 +519,11 @@ export class MatchesService {
     if (!group) {
       throw new NotFoundException(`Group with id "${groupId}" not found`);
     }
-    if (group.tournamentId.toString() !== tournamentId) {
+    const groupTournamentId =
+      group.tournamentId instanceof Types.ObjectId
+        ? group.tournamentId
+        : group.tournamentId._id;
+    if (groupTournamentId.toString() !== tournamentId) {
       throw new BadRequestException(
         'groupId does not belong to the provided tournamentId',
       );
