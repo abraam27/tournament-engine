@@ -129,6 +129,14 @@ export class MatchesController {
     return this.matchesService.updateStatus(id, updateMatchStatusDto);
   }
 
+  @Patch(':id/swap-teams')
+  @ApiOperation({ summary: 'Swap home and away teams for a match' })
+  @ApiParam({ name: 'id', description: 'Match MongoId' })
+  @ApiOkResponse({ type: MatchResponseDto, description: 'Teams swapped' })
+  swapTeams(@Param('id') id: string) {
+    return this.matchesService.swapTeams(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get match by id' })
   @ApiParam({ name: 'id', description: 'Match MongoId' })

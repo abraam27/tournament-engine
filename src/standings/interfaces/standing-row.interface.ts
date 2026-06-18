@@ -2,6 +2,7 @@ export interface StandingTeamInfo {
   _id: string;
   name: string;
   code: string;
+  flagUrl?: string;
 }
 
 export interface StandingTeamInput {

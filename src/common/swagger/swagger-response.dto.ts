@@ -34,6 +34,9 @@ export class TeamResponseDto {
   @ApiProperty({ example: 'EGY' })
   code: string;
 
+  @ApiPropertyOptional({ example: 'https://flagcdn.com/16x12/eg.png' })
+  flagUrl?: string;
+
   @ApiPropertyOptional({ example: 'CAF' })
   confederation?: string;
 }
@@ -64,6 +67,9 @@ export class MatchTeamResponseDto {
 
   @ApiProperty({ example: 'EGY' })
   code: string;
+
+  @ApiPropertyOptional({ example: 'https://flagcdn.com/16x12/eg.png' })
+  flagUrl?: string;
 }
 
 export class MatchResponseDto {

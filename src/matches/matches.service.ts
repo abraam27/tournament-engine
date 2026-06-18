@@ -213,6 +213,28 @@ export class MatchesService {
       updatePayload.matchDate = new Date(updateMatchDto.matchDate);
     }
 
+    if (updateMatchDto.homeTeamId || updateMatchDto.awayTeamId) {
+      const newHomeTeamId =
+        updateMatchDto.homeTeamId ?? match.homeTeamId.toString();
+      const newAwayTeamId =
+        updateMatchDto.awayTeamId ?? match.awayTeamId.toString();
+
+      await this.validateTeamExists(newHomeTeamId, 'homeTeamId');
+      await this.validateTeamExists(newAwayTeamId, 'awayTeamId');
+      this.assertTeamsAreDifferent(newHomeTeamId, newAwayTeamId);
+
+      updatePayload.homeTeamId = new Types.ObjectId(newHomeTeamId);
+      updatePayload.awayTeamId = new Types.ObjectId(newAwayTeamId);
+
+      const isSwap =
+        newHomeTeamId === match.awayTeamId.toString() &&
+        newAwayTeamId === match.homeTeamId.toString();
+
+      if (isSwap) {
+        this.applyTeamSwapSideEffects(match, updatePayload);
+      }
+    }
+
     try {
       await this.matchModel
         .findByIdAndUpdate(id, updatePayload, {
@@ -225,6 +247,32 @@ export class MatchesService {
       handleDuplicateKeyError(error);
       throw error;
     }
+  }
+
+  async swapTeams(id: string): Promise<Match> {
+    assertValidObjectId(id, 'id');
+    const match = await this.matchModel.findById(id).exec();
+    if (!match) {
+      throw new NotFoundException(`Match with id "${id}" not found`);
+    }
+
+    this.ensureMatchCanBeUpdated(match);
+
+    const updatePayload: Record<string, unknown> = {
+      homeTeamId: match.awayTeamId,
+      awayTeamId: match.homeTeamId,
+    };
+
+    this.applyTeamSwapSideEffects(match, updatePayload);
+
+    await this.matchModel
+      .findByIdAndUpdate(id, updatePayload, {
+        returnDocument: 'after',
+        runValidators: true,
+      })
+      .exec();
+
+    return this.findOne(id);
   }
 
   async schedule(id: string, scheduleMatchDto: ScheduleMatchDto): Promise<Match> {
@@ -479,6 +527,64 @@ export class MatchesService {
   ensureMatchCanBeUpdated(match: Match): void {
     if (match.status === MatchStatus.COMPLETED) {
       throw new ConflictException('Completed matches cannot be modified');
+    }
+  }
+
+  private applyTeamSwapSideEffects(
+    match: Match,
+    updatePayload: Record<string, unknown>,
+  ): void {
+    this.swapOptionalFields(match, updatePayload, 'homeScore', 'awayScore');
+    this.swapOptionalFields(
+      match,
+      updatePayload,
+      'extraTimeHomeScore',
+      'extraTimeAwayScore',
+    );
+    this.swapOptionalFields(
+      match,
+      updatePayload,
+      'penaltiesHomeScore',
+      'penaltiesAwayScore',
+    );
+
+    if (match.winnerTeamId) {
+      const winnerId = match.winnerTeamId.toString();
+      const homeId = match.homeTeamId.toString();
+      const awayId = match.awayTeamId.toString();
+
+      if (winnerId === homeId) {
+        updatePayload.winnerTeamId = match.awayTeamId;
+      } else if (winnerId === awayId) {
+        updatePayload.winnerTeamId = match.homeTeamId;
+      }
+    }
+
+    if (match.loserTeamId) {
+      const loserId = match.loserTeamId.toString();
+      const homeId = match.homeTeamId.toString();
+      const awayId = match.awayTeamId.toString();
+
+      if (loserId === homeId) {
+        updatePayload.loserTeamId = match.awayTeamId;
+      } else if (loserId === awayId) {
+        updatePayload.loserTeamId = match.homeTeamId;
+      }
+    }
+  }
+
+  private swapOptionalFields(
+    match: Match,
+    updatePayload: Record<string, unknown>,
+    homeKey: keyof Match,
+    awayKey: keyof Match,
+  ): void {
+    const homeValue = match[homeKey];
+    const awayValue = match[awayKey];
+
+    if (homeValue !== undefined || awayValue !== undefined) {
+      updatePayload[homeKey as string] = awayValue;
+      updatePayload[awayKey as string] = homeValue;
     }
   }
 

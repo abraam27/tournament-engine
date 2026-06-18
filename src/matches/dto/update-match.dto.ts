@@ -24,6 +24,12 @@ export class UpdateMatchDto {
   @IsNotEmpty()
   stadium?: string;
 
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  matchNumber?: number;
+
   @ApiPropertyOptional({ enum: MatchStatus })
   @IsOptional()
   @IsEnum(MatchStatus)
@@ -60,4 +66,14 @@ export class UpdateMatchDto {
   @IsOptional()
   @IsEnum(NextMatchSlot)
   nextMatchSlot?: NextMatchSlot;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsMongoId()
+  homeTeamId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsMongoId()
+  awayTeamId?: string;
 }

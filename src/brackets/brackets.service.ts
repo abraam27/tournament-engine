@@ -19,6 +19,7 @@ import { StageStatus } from 'src/stages/enums/stage-status.enum';
 import { BracketSlotPosition } from 'src/bracket-slots/enums/bracket-slot-position.enum';
 import { BracketSourceType } from 'src/bracket-slots/enums/bracket-source-type.enum';
 import { assertValidObjectId } from 'src/common/utils/mongoose.util';
+import { buildFlagCdnUrl } from 'src/teams/utils/flag-url.util';
 import {
   ROUND_OF_32_TEMPLATE,
   RoundOf32TemplateMatch,
@@ -454,12 +455,16 @@ export class BracketsService {
       _id?: { toString(): string };
       name?: string;
       code?: string;
+      flagUrl?: string;
     };
 
     return {
       _id: populatedTeam._id?.toString(),
       name: populatedTeam.name,
       code: populatedTeam.code,
+      ...(populatedTeam.flagUrl
+        ? { flagUrl: buildFlagCdnUrl(populatedTeam.flagUrl) }
+        : {}),
     };
   }
 }

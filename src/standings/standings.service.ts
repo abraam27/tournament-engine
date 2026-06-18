@@ -8,6 +8,7 @@ import { Tournament } from 'src/tournaments/schemas/tournament.schema';
 import { MatchRound } from 'src/matches/enums/match-round.enum';
 import { MatchStatus } from 'src/matches/enums/match-status.enum';
 import { assertValidObjectId } from 'src/common/utils/mongoose.util';
+import { buildFlagCdnUrl } from 'src/teams/utils/flag-url.util';
 import {
   StandingMatchInput,
   StandingRow,
@@ -192,7 +193,13 @@ export class StandingsService {
 
   private mapGroupTeams(
     groupTeams: Array<{
-      teamId: { _id?: { toString(): string }; toString(): string; name?: string; code?: string };
+      teamId: {
+        _id?: { toString(): string };
+        toString(): string;
+        name?: string;
+        code?: string;
+        flagUrl?: string;
+      };
     }>,
   ): StandingTeamInput[] {
     return groupTeams.map((groupTeam) => {
@@ -214,6 +221,12 @@ export class StandingsService {
             typeof team === 'object' && team !== null && 'code' in team
               ? (team.code as string)
               : '',
+          ...(typeof team === 'object' &&
+          team !== null &&
+          'flagUrl' in team &&
+          team.flagUrl
+            ? { flagUrl: buildFlagCdnUrl(team.flagUrl) }
+            : {}),
         },
       };
     });

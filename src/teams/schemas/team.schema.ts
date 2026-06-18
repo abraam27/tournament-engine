@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { Confederation } from '../enums/confederation.enum';
+import { buildFlagCdnUrl } from '../utils/flag-url.util';
 
 @Schema({
   collection: 'teams',
@@ -28,5 +29,18 @@ export class Team extends Document {
 }
 
 export const TeamSchema = SchemaFactory.createForClass(Team);
+
+const transformTeamFlagUrl = (
+  _doc: unknown,
+  ret: { flagUrl?: string },
+): { flagUrl?: string } => {
+  if (ret.flagUrl) {
+    ret.flagUrl = buildFlagCdnUrl(ret.flagUrl);
+  }
+  return ret;
+};
+
+TeamSchema.set('toJSON', { transform: transformTeamFlagUrl });
+TeamSchema.set('toObject', { transform: transformTeamFlagUrl });
 
 TeamSchema.index({ code: 1 }, { unique: true });

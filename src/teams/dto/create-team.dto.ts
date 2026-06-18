@@ -6,7 +6,6 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUrl,
   Length,
   Matches,
   Min,
@@ -30,9 +29,13 @@ export class CreateTeamDto {
   })
   code: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/flags/egy.png' })
+  @ApiPropertyOptional({
+    example: 'eg',
+    description: 'FlagCDN country code stored in DB (e.g. eg, ar, gb-eng)',
+  })
   @IsOptional()
-  @IsUrl()
+  @IsString()
+  @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
   flagUrl?: string;
 
   @ApiPropertyOptional({ enum: Confederation, example: Confederation.CAF })
