@@ -108,6 +108,14 @@ export class MatchesController {
     return this.matchesService.submitResult(id, submitMatchResultDto);
   }
 
+  @Delete(':id/result')
+  @ApiOperation({ summary: 'Reset a submitted match result' })
+  @ApiParam({ name: 'id', description: 'Match MongoId' })
+  @ApiOkResponse({ type: MatchResponseDto, description: 'Match result reset' })
+  resetResult(@Param('id') id: string) {
+    return this.matchesService.resetResult(id);
+  }
+
   @Patch(':id/schedule')
   @ApiOperation({ summary: 'Schedule a match with date and stadium' })
   @ApiParam({ name: 'id', description: 'Match MongoId' })

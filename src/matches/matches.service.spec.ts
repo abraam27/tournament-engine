@@ -349,6 +349,67 @@ describe('MatchesService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('resets a completed match result', async () => {
+    const completedMatch = {
+      ...baseGroupMatch,
+      status: MatchStatus.COMPLETED,
+      homeScore: 2,
+      awayScore: 1,
+    };
+
+    const resetMatch = {
+      ...baseGroupMatch,
+      status: MatchStatus.SCHEDULED,
+    };
+
+    matchModel.findById
+      .mockReturnValueOnce({
+        exec: jest.fn().mockResolvedValue(completedMatch),
+      })
+      .mockReturnValueOnce(mockFindOneResult(resetMatch));
+    matchModel.findByIdAndUpdate.mockReturnValue({
+      exec: jest.fn().mockResolvedValue(resetMatch),
+    });
+
+    const result = await service.resetResult(matchId);
+
+    expect(matchModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      matchId,
+      {
+        $set: {
+          status: MatchStatus.SCHEDULED,
+          hasExtraTime: false,
+          hasPenalties: false,
+        },
+        $unset: {
+          homeScore: '',
+          awayScore: '',
+          extraTimeHomeScore: '',
+          extraTimeAwayScore: '',
+          penaltiesHomeScore: '',
+          penaltiesAwayScore: '',
+          winnerTeamId: '',
+          loserTeamId: '',
+        },
+      },
+      { returnDocument: 'after', runValidators: true },
+    );
+    expect(result).toEqual(resetMatch);
+  });
+
+  it('throws BadRequestException when resetting a scheduled match', async () => {
+    matchModel.findById.mockReturnValue({
+      exec: jest.fn().mockResolvedValue({
+        ...baseGroupMatch,
+        status: MatchStatus.SCHEDULED,
+      }),
+    });
+
+    await expect(service.resetResult(matchId)).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
   it('throws ConflictException when updating a completed match', async () => {
     matchModel.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue({

@@ -199,6 +199,55 @@ export class MatchesService {
     return this.findOne(id);
   }
 
+  async resetResult(id: string): Promise<Match> {
+    assertValidObjectId(id, 'id');
+    const match = await this.matchModel.findById(id).exec();
+    if (!match) {
+      throw new NotFoundException(`Match with id "${id}" not found`);
+    }
+
+    if (match.status === MatchStatus.CANCELLED) {
+      throw new BadRequestException(
+        'Cannot reset result for a cancelled match',
+      );
+    }
+
+    if (
+      match.status !== MatchStatus.COMPLETED &&
+      match.status !== MatchStatus.LIVE
+    ) {
+      throw new BadRequestException(
+        'Only completed or live matches can have their result reset',
+      );
+    }
+
+    await this.matchModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            status: MatchStatus.SCHEDULED,
+            hasExtraTime: false,
+            hasPenalties: false,
+          },
+          $unset: {
+            homeScore: '',
+            awayScore: '',
+            extraTimeHomeScore: '',
+            extraTimeAwayScore: '',
+            penaltiesHomeScore: '',
+            penaltiesAwayScore: '',
+            winnerTeamId: '',
+            loserTeamId: '',
+          },
+        },
+        { returnDocument: 'after', runValidators: true },
+      )
+      .exec();
+
+    return this.findOne(id);
+  }
+
   async update(id: string, updateMatchDto: UpdateMatchDto): Promise<Match> {
     assertValidObjectId(id, 'id');
     const match = await this.matchModel.findById(id).exec();
