@@ -3,17 +3,17 @@ import { KnockoutTemplateMatch } from './knockout-template.interface';
 export const ROUND_OF_16_TEMPLATE: KnockoutTemplateMatch[] = [
   {
     matchNumber: 89,
-    homeSource: 'WINNER_MATCH_74',
-    awaySource: 'WINNER_MATCH_77',
-    matchDate: '2026-07-04',
-    stadium: 'Philadelphia Stadium',
-  },
-  {
-    matchNumber: 90,
     homeSource: 'WINNER_MATCH_73',
     awaySource: 'WINNER_MATCH_75',
     matchDate: '2026-07-04',
     stadium: 'Houston Stadium',
+  },
+  {
+    matchNumber: 90,
+    homeSource: 'WINNER_MATCH_74',
+    awaySource: 'WINNER_MATCH_77',
+    matchDate: '2026-07-05',
+    stadium: 'Philadelphia Stadium',
   },
   {
     matchNumber: 91,
@@ -40,7 +40,7 @@ export const ROUND_OF_16_TEMPLATE: KnockoutTemplateMatch[] = [
     matchNumber: 94,
     homeSource: 'WINNER_MATCH_81',
     awaySource: 'WINNER_MATCH_82',
-    matchDate: '2026-07-06',
+    matchDate: '2026-07-07',
     stadium: 'Seattle Stadium',
   },
   {
