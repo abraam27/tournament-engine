@@ -38,6 +38,16 @@ export class CreateMatchDto {
   @Min(1)
   matchNumber: number;
 
+  @ApiPropertyOptional({
+    example: 1,
+    description:
+      'Bracket slot order within the round (Round of 32 through Semi-finals)',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  bracketPosition?: number;
+
   @ApiProperty({ example: '64f1a2b3c4d5e6f7a8b9c0d3' })
   @IsMongoId()
   homeTeamId: string;

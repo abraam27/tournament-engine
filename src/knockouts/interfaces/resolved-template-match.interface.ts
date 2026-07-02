@@ -10,6 +10,7 @@ export interface ResolvedSourceRef {
 export interface ResolvedTemplateMatch {
   round: MatchRound;
   matchNumber: number;
+  bracketPosition: number;
   homeTeamId: string;
   awayTeamId: string;
   homeSourceRef: string;

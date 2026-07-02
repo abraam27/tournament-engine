@@ -18,6 +18,7 @@ import { ScheduleMatchDto } from './dto/schedule-match.dto';
 import { SubmitMatchResultDto } from './dto/submit-match-result.dto';
 import { MatchRound } from './enums/match-round.enum';
 import { MatchStatus } from './enums/match-status.enum';
+import { isBracketPositionRound } from './constants/bracket-position-rounds.constant';
 import { FixtureGeneratorService } from './fixture-generator.service';
 import {
   assertValidObjectId,
@@ -256,6 +257,14 @@ export class MatchesService {
     }
 
     this.ensureMatchCanBeUpdated(match);
+
+    if (updateMatchDto.bracketPosition !== undefined) {
+      await this.validateBracketPosition(
+        match,
+        updateMatchDto.bracketPosition,
+        id,
+      );
+    }
 
     const updatePayload: Record<string, unknown> = { ...updateMatchDto };
     if (updateMatchDto.matchDate) {
@@ -634,6 +643,39 @@ export class MatchesService {
     if (homeValue !== undefined || awayValue !== undefined) {
       updatePayload[homeKey as string] = awayValue;
       updatePayload[awayKey as string] = homeValue;
+    }
+  }
+
+  private async validateBracketPosition(
+    match: Match,
+    bracketPosition: number,
+    excludeMatchId?: string,
+  ): Promise<void> {
+    if (!isBracketPositionRound(match.round)) {
+      throw new BadRequestException(
+        'bracketPosition can only be set for Round of 32, Round of 16, Quarter-finals, and Semi-finals',
+      );
+    }
+
+    if (bracketPosition < 1) {
+      throw new BadRequestException('bracketPosition must be at least 1');
+    }
+
+    const query: Record<string, unknown> = {
+      tournamentId: match.tournamentId,
+      round: match.round,
+      bracketPosition,
+    };
+
+    if (excludeMatchId) {
+      query._id = { $ne: excludeMatchId };
+    }
+
+    const duplicate = await this.matchModel.findOne(query).exec();
+    if (duplicate) {
+      throw new ConflictException(
+        `Another match in "${match.round}" already uses bracket position ${bracketPosition}`,
+      );
     }
   }
 

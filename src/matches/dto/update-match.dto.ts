@@ -30,6 +30,16 @@ export class UpdateMatchDto {
   @Min(1)
   matchNumber?: number;
 
+  @ApiPropertyOptional({
+    example: 1,
+    description:
+      'Bracket slot order within the round (Round of 32 through Semi-finals)',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  bracketPosition?: number;
+
   @ApiPropertyOptional({ enum: MatchStatus })
   @IsOptional()
   @IsEnum(MatchStatus)

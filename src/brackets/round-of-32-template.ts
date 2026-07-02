@@ -11,7 +11,7 @@ export const ROUND_OF_32_TEMPLATE: RoundOf32TemplateMatch[] = [
   { home: 'C1', away: 'F2' },
 
   // Match 75
-  { home: 'E1', away: 'BEST_THIRD_1' },
+  { home: 'E1', away: 'BEST_THIRD_7' },
 
   // Match 76
   { home: 'F1', away: 'C2' },
@@ -26,10 +26,10 @@ export const ROUND_OF_32_TEMPLATE: RoundOf32TemplateMatch[] = [
   { home: 'A1', away: 'BEST_THIRD_3' },
 
   // Match 80
-  { home: 'L1', away: 'BEST_THIRD_4' },
+  { home: 'L1', away: 'BEST_THIRD_1' },
 
   // Match 81
-  { home: 'G1', away: 'BEST_THIRD_6' },
+  { home: 'G1', away: 'BEST_THIRD_8' },
 
   // Match 82
   { home: 'D1', away: 'BEST_THIRD_5' },
@@ -41,7 +41,7 @@ export const ROUND_OF_32_TEMPLATE: RoundOf32TemplateMatch[] = [
   { home: 'K2', away: 'L2' },
 
   // Match 85
-  { home: 'B1', away: 'BEST_THIRD_7' },
+  { home: 'B1', away: 'BEST_THIRD_6' },
 
   // Match 86
   { home: 'D2', away: 'G2' },
@@ -50,5 +50,5 @@ export const ROUND_OF_32_TEMPLATE: RoundOf32TemplateMatch[] = [
   { home: 'J1', away: 'H2' },
 
   // Match 88
-  { home: 'K1', away: 'BEST_THIRD_8' },
+  { home: 'K1', away: 'BEST_THIRD_4' },
 ];

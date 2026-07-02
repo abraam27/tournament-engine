@@ -138,12 +138,14 @@ export class BracketsService {
     let nextMatchNumber = (maxMatch?.matchNumber ?? 0) + 1;
     const createdMatches: Match[] = [];
 
-    for (const resolvedMatch of resolvedMatches) {
+    for (let index = 0; index < resolvedMatches.length; index += 1) {
+      const resolvedMatch = resolvedMatches[index];
       const match = await this.matchModel.create({
         tournamentId,
         stageId: stage._id,
         round: MatchRound.ROUND_32,
         matchNumber: nextMatchNumber,
+        bracketPosition: index + 1,
         homeTeamId: resolvedMatch.homeTeamId,
         awayTeamId: resolvedMatch.awayTeamId,
         status: MatchStatus.SCHEDULED,

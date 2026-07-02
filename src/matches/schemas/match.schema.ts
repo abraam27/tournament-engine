@@ -37,6 +37,9 @@ export class Match extends Document {
   @Prop({ required: true, type: Number })
   matchNumber: number;
 
+  @Prop({ required: false, type: Number, min: 1 })
+  bracketPosition?: number;
+
   @Prop({
     required: true,
     type: mongoose.Schema.Types.ObjectId,
@@ -122,4 +125,8 @@ MatchSchema.index(
   { unique: true, sparse: true },
 );
 MatchSchema.index({ tournamentId: 1, round: 1 });
+MatchSchema.index(
+  { tournamentId: 1, round: 1, bracketPosition: 1 },
+  { unique: true, sparse: true },
+);
 MatchSchema.index({ groupId: 1 });

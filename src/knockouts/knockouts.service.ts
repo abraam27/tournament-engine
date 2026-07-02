@@ -13,6 +13,7 @@ import { BracketSlot } from 'src/bracket-slots/bracket-slot.schema';
 import { SubmitMatchResultDto } from 'src/matches/dto/submit-match-result.dto';
 import { MatchRound } from 'src/matches/enums/match-round.enum';
 import { MatchStatus } from 'src/matches/enums/match-status.enum';
+import { isBracketPositionRound } from 'src/matches/constants/bracket-position-rounds.constant';
 import { StageType } from 'src/stages/enums/stage-type.enum';
 import { StageStatus } from 'src/stages/enums/stage-status.enum';
 import { BracketSlotPosition } from 'src/bracket-slots/enums/bracket-slot-position.enum';
@@ -283,8 +284,13 @@ export class KnockoutsService {
     const matchByNumber = await this.buildMatchByNumberMap(tournamentId);
     this.validateTemplateSourceMatches(template, matchByNumber);
 
-    const resolvedMatches = template.map((templateMatch) =>
-      this.resolveTemplateMatch(templateMatch, targetRound, matchByNumber),
+    const resolvedMatches = template.map((templateMatch, index) =>
+      this.resolveTemplateMatch(
+        templateMatch,
+        targetRound,
+        matchByNumber,
+        index + 1,
+      ),
     );
 
     return this.createNextRoundMatches(tournamentId, resolvedMatches);
@@ -322,6 +328,10 @@ export class KnockoutsService {
       rounds[match.round].push(this.mapKnockoutMatch(match));
     }
 
+    for (const round of KNOCKOUT_ROUNDS) {
+      rounds[round] = this.sortBracketRoundMatches(rounds[round], round);
+    }
+
     return {
       tournamentId,
       rounds,
@@ -349,7 +359,10 @@ export class KnockoutsService {
     return {
       tournamentId,
       round,
-      matches: matches.map((match) => this.mapKnockoutMatch(match)),
+      matches: this.sortBracketRoundMatches(
+        matches.map((match) => this.mapKnockoutMatch(match)),
+        round as MatchRound,
+      ),
     };
   }
 
@@ -426,8 +439,13 @@ export class KnockoutsService {
     roundTemplate: RoundTemplate,
     matchByNumber: Map<number, Match>,
   ): ResolvedTemplateMatch[] {
-    return roundTemplate.matches.map((templateMatch) =>
-      this.resolveTemplateMatch(templateMatch, roundTemplate.round, matchByNumber),
+    return roundTemplate.matches.map((templateMatch, index) =>
+      this.resolveTemplateMatch(
+        templateMatch,
+        roundTemplate.round,
+        matchByNumber,
+        index + 1,
+      ),
     );
   }
 
@@ -435,6 +453,7 @@ export class KnockoutsService {
     templateMatch: KnockoutTemplateMatch,
     round: MatchRound,
     matchByNumber: Map<number, Match>,
+    bracketPosition: number,
   ): ResolvedTemplateMatch {
     const home = this.resolveSourceRef(templateMatch.homeSource, matchByNumber);
     const away = this.resolveSourceRef(templateMatch.awaySource, matchByNumber);
@@ -442,6 +461,7 @@ export class KnockoutsService {
     return {
       round,
       matchNumber: templateMatch.matchNumber,
+      bracketPosition,
       homeTeamId: home.teamId,
       awayTeamId: away.teamId,
       homeSourceRef: home.sourceRef,
@@ -552,6 +572,9 @@ export class KnockoutsService {
         stageId: stage._id,
         round: resolvedMatch.round,
         matchNumber: resolvedMatch.matchNumber,
+        bracketPosition: isBracketPositionRound(resolvedMatch.round)
+          ? resolvedMatch.bracketPosition
+          : undefined,
         homeTeamId: resolvedMatch.homeTeamId,
         awayTeamId: resolvedMatch.awayTeamId,
         status: MatchStatus.SCHEDULED,
@@ -677,10 +700,30 @@ export class KnockoutsService {
     }
   }
 
+  private sortBracketRoundMatches<
+    T extends { bracketPosition?: number; matchNumber: number },
+  >(matches: T[], round: MatchRound): T[] {
+    if (!isBracketPositionRound(round)) {
+      return [...matches].sort((a, b) => a.matchNumber - b.matchNumber);
+    }
+
+    return [...matches].sort((a, b) => {
+      const positionA = a.bracketPosition ?? Number.MAX_SAFE_INTEGER;
+      const positionB = b.bracketPosition ?? Number.MAX_SAFE_INTEGER;
+
+      if (positionA !== positionB) {
+        return positionA - positionB;
+      }
+
+      return a.matchNumber - b.matchNumber;
+    });
+  }
+
   private mapKnockoutMatch(match: Match) {
     return {
       matchId: match._id.toString(),
       matchNumber: match.matchNumber,
+      bracketPosition: match.bracketPosition,
       round: match.round,
       homeTeam: this.mapPopulatedTeam(match.homeTeamId),
       awayTeam: this.mapPopulatedTeam(match.awayTeamId),
@@ -695,6 +738,7 @@ export class KnockoutsService {
       winnerTeamId: match.winnerTeamId?.toString(),
       loserTeamId: match.loserTeamId?.toString(),
       status: match.status,
+      matchDate: match.matchDate?.toISOString(),
     };
   }
 
