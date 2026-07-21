@@ -21,6 +21,7 @@ import { BracketSourceType } from 'src/bracket-slots/enums/bracket-source-type.e
 import { assertValidObjectId } from 'src/common/utils/mongoose.util';
 import { buildFlagCdnUrl } from 'src/teams/utils/flag-url.util';
 import { KNOCKOUT_ROUND_TEMPLATES } from './templates/knockout-round-templates';
+import { SCAFFOLD_ROUND_TEMPLATES } from './templates/scaffold-round-templates';
 import {
   KnockoutTemplateMatch,
   RoundTemplate,
@@ -55,6 +56,35 @@ const STAGE_CONFIG: Partial<
   [MatchRound.THIRD_PLACE]: { name: 'Third Place', order: 6 },
   [MatchRound.FINAL]: { name: 'Final', order: 7 },
 };
+
+const TEMPLATE_MATCH_RANGES: Array<{
+  round: MatchRound;
+  start: number;
+  count: number;
+}> = [
+  { round: MatchRound.ROUND_32, start: 73, count: 16 },
+  { round: MatchRound.ROUND_16, start: 89, count: 8 },
+  { round: MatchRound.QUARTER_FINAL, start: 97, count: 4 },
+  { round: MatchRound.SEMI_FINAL, start: 101, count: 2 },
+  { round: MatchRound.THIRD_PLACE, start: 103, count: 1 },
+  { round: MatchRound.FINAL, start: 104, count: 1 },
+];
+
+const KNOCKOUT_RESET_ORDER: MatchRound[] = [
+  MatchRound.ROUND_32,
+  MatchRound.ROUND_16,
+  MatchRound.QUARTER_FINAL,
+  MatchRound.SEMI_FINAL,
+  MatchRound.THIRD_PLACE,
+  MatchRound.FINAL,
+];
+
+const RESETTABLE_FROM_ROUNDS: MatchRound[] = [
+  MatchRound.ROUND_32,
+  MatchRound.ROUND_16,
+  MatchRound.QUARTER_FINAL,
+  MatchRound.SEMI_FINAL,
+];
 
 export interface KnockoutWinnerResult {
   winnerTeamId: mongoose.Types.ObjectId;
@@ -125,6 +155,12 @@ export class KnockoutsService {
     match: Match,
     dto: SubmitMatchResultDto,
   ): KnockoutWinnerResult {
+    if (!match.homeTeamId || !match.awayTeamId) {
+      throw new BadRequestException('Knockout match must have both teams assigned');
+    }
+
+    const homeTeamId = match.homeTeamId;
+    const awayTeamId = match.awayTeamId;
     const { homeScore, awayScore } = dto;
     const hasExtraTime = dto.hasExtraTime === true;
     const hasPenalties = dto.hasPenalties === true;
@@ -134,9 +170,9 @@ export class KnockoutsService {
 
       return {
         winnerTeamId:
-          homeScore > awayScore ? match.homeTeamId : match.awayTeamId,
+          homeScore > awayScore ? homeTeamId : awayTeamId,
         loserTeamId:
-          homeScore > awayScore ? match.awayTeamId : match.homeTeamId,
+          homeScore > awayScore ? awayTeamId : homeTeamId,
         hasExtraTime: false,
         hasPenalties: false,
       };
@@ -188,12 +224,12 @@ export class KnockoutsService {
       return {
         winnerTeamId:
           dto.extraTimeHomeScore > dto.extraTimeAwayScore
-            ? match.homeTeamId
-            : match.awayTeamId,
+            ? homeTeamId
+            : awayTeamId,
         loserTeamId:
           dto.extraTimeHomeScore > dto.extraTimeAwayScore
-            ? match.awayTeamId
-            : match.homeTeamId,
+            ? awayTeamId
+            : homeTeamId,
         hasExtraTime: true,
         extraTimeHomeScore: dto.extraTimeHomeScore,
         extraTimeAwayScore: dto.extraTimeAwayScore,
@@ -223,12 +259,12 @@ export class KnockoutsService {
     return {
       winnerTeamId:
         dto.penaltiesHomeScore > dto.penaltiesAwayScore
-          ? match.homeTeamId
-          : match.awayTeamId,
+          ? homeTeamId
+          : awayTeamId,
       loserTeamId:
         dto.penaltiesHomeScore > dto.penaltiesAwayScore
-          ? match.awayTeamId
-          : match.homeTeamId,
+          ? awayTeamId
+          : homeTeamId,
       hasExtraTime: true,
       extraTimeHomeScore: dto.extraTimeHomeScore,
       extraTimeAwayScore: dto.extraTimeAwayScore,
@@ -272,6 +308,237 @@ export class KnockoutsService {
       createdMatchesCount: createdMatches.length,
       matches: createdMatches,
     };
+  }
+
+  async scaffoldKnockoutBracket(tournamentId: string) {
+    assertValidObjectId(tournamentId, 'tournamentId');
+
+    const tournament = await this.tournamentModel.findById(tournamentId).exec();
+    if (!tournament) {
+      throw new NotFoundException(
+        `Tournament with id "${tournamentId}" not found`,
+      );
+    }
+
+    const round32Count = await this.matchModel
+      .countDocuments({ tournamentId, round: MatchRound.ROUND_32 })
+      .exec();
+
+    if (round32Count === 0) {
+      throw new BadRequestException(
+        'Round of 32 must exist before scaffolding the knockout bracket',
+      );
+    }
+
+    return this.scaffoldKnockoutFromRound(tournamentId, MatchRound.ROUND_16);
+  }
+
+  async resetKnockoutFromStage(
+    tournamentId: string,
+    fromRound: MatchRound,
+    regenerate = true,
+  ) {
+    assertValidObjectId(tournamentId, 'tournamentId');
+
+    const tournament = await this.tournamentModel.findById(tournamentId).exec();
+    if (!tournament) {
+      throw new NotFoundException(
+        `Tournament with id "${tournamentId}" not found`,
+      );
+    }
+
+    if (!RESETTABLE_FROM_ROUNDS.includes(fromRound)) {
+      throw new BadRequestException(
+        `fromRound must be one of: ${RESETTABLE_FROM_ROUNDS.join(', ')}`,
+      );
+    }
+
+    const roundsToDelete = this.getKnockoutRoundsFrom(fromRound);
+    const matches = await this.matchModel
+      .find({
+        tournamentId,
+        round: { $in: roundsToDelete },
+      })
+      .exec();
+
+    if (matches.length === 0) {
+      throw new BadRequestException(
+        `No knockout matches found from "${fromRound}" onwards`,
+      );
+    }
+
+    const matchIds = matches.map((match) => match._id);
+    await this.bracketSlotModel
+      .deleteMany({ matchId: { $in: matchIds } })
+      .exec();
+    await this.matchModel.deleteMany({ _id: { $in: matchIds } }).exec();
+
+    let regeneratedMatchesCount = 0;
+
+    if (regenerate) {
+      if (fromRound === MatchRound.ROUND_32) {
+        throw new BadRequestException(
+          'Round of 32 cannot be auto-regenerated. Use Generate Round of 32 after reset.',
+        );
+      }
+
+      const scaffoldResult = await this.scaffoldKnockoutFromRound(
+        tournamentId,
+        fromRound,
+      );
+      regeneratedMatchesCount = scaffoldResult.createdMatchesCount;
+      await this.repropagateFeederRounds(tournamentId, fromRound);
+    }
+
+    return {
+      tournamentId,
+      fromRound,
+      deletedMatchesCount: matches.length,
+      deletedRounds: roundsToDelete,
+      regenerate,
+      regeneratedMatchesCount,
+    };
+  }
+
+  async scaffoldKnockoutFromRound(
+    tournamentId: string,
+    fromRound: MatchRound,
+  ) {
+    assertValidObjectId(tournamentId, 'tournamentId');
+
+    if (
+      fromRound === MatchRound.ROUND_32 ||
+      fromRound === MatchRound.GROUP
+    ) {
+      throw new BadRequestException(
+        'Scaffold can only start from Round of 16 or later',
+      );
+    }
+
+    const roundTemplates = this.getScaffoldTemplatesFrom(fromRound);
+
+    if (roundTemplates.length === 0) {
+      throw new BadRequestException(
+        `No scaffold templates configured from "${fromRound}"`,
+      );
+    }
+
+    for (const roundTemplate of roundTemplates) {
+      await this.assertTargetRoundDoesNotExist(
+        tournamentId,
+        roundTemplate.round,
+      );
+    }
+
+    const matchByNumber = await this.buildMatchByNumberMap(tournamentId);
+    const createdMatches: Match[] = [];
+
+    for (const roundTemplate of roundTemplates) {
+      this.validateTemplateSourceMatchesForScaffold(
+        roundTemplate.matches,
+        matchByNumber,
+      );
+
+      const resolvedMatches = roundTemplate.matches.map(
+        (templateMatch, index) =>
+          this.resolveTemplateMatchForScaffold(
+            templateMatch,
+            roundTemplate.round,
+            matchByNumber,
+            index + 1,
+          ),
+      );
+
+      const roundMatches = await this.createNextRoundMatches(
+        tournamentId,
+        resolvedMatches,
+      );
+
+      for (const match of roundMatches) {
+        matchByNumber.set(match.matchNumber, match);
+        createdMatches.push(match);
+      }
+    }
+
+    return {
+      tournamentId,
+      fromRound,
+      createdMatchesCount: createdMatches.length,
+      matches: createdMatches,
+    };
+  }
+
+  async propagateMatchOutcome(match: Match): Promise<void> {
+    if (match.round === MatchRound.GROUP) {
+      return;
+    }
+
+    if (!match.winnerTeamId && !match.loserTeamId) {
+      return;
+    }
+
+    const tournamentId = match.tournamentId;
+    const sourceRefs: string[] = [];
+
+    if (match.winnerTeamId) {
+      sourceRefs.push(`WINNER_MATCH_${match.matchNumber}`);
+    }
+
+    if (match.loserTeamId) {
+      sourceRefs.push(`LOSER_MATCH_${match.matchNumber}`);
+    }
+
+    const slots = await this.bracketSlotModel
+      .find({
+        tournamentId,
+        sourceRef: { $in: sourceRefs },
+      })
+      .exec();
+
+    for (const slot of slots) {
+      const teamId =
+        slot.sourceRef === `WINNER_MATCH_${match.matchNumber}`
+          ? match.winnerTeamId
+          : match.loserTeamId;
+
+      if (!teamId) {
+        continue;
+      }
+
+      await this.fillBracketSlot(slot, teamId);
+    }
+  }
+
+  async rollbackMatchOutcome(match: Match): Promise<void> {
+    if (match.round === MatchRound.GROUP) {
+      return;
+    }
+
+    const sourceRefs = [
+      `WINNER_MATCH_${match.matchNumber}`,
+      `LOSER_MATCH_${match.matchNumber}`,
+    ];
+
+    const slots = await this.bracketSlotModel
+      .find({
+        tournamentId: match.tournamentId,
+        sourceRef: { $in: sourceRefs },
+      })
+      .exec();
+
+    for (const slot of slots) {
+      const downstreamMatch = await this.matchModel.findById(slot.matchId).exec();
+
+      if (downstreamMatch?.status === MatchStatus.COMPLETED) {
+        throw new ConflictException(
+          `Cannot reset match ${match.matchNumber}: downstream match ${downstreamMatch.matchNumber} already has a result`,
+        );
+      }
+    }
+
+    for (const slot of slots) {
+      await this.clearBracketSlot(slot);
+    }
   }
 
   async generateRoundFromTemplate(
@@ -425,6 +692,97 @@ export class KnockoutsService {
     throw new BadRequestException(`Invalid source ref "${sourceRef}"`);
   }
 
+  resolveSourceRefForScaffold(
+    sourceRef: string,
+    matchByNumber: Map<number, Match>,
+  ): ResolvedSourceRef {
+    const winnerMatch = sourceRef.match(/^WINNER_MATCH_(\d+)$/);
+    if (winnerMatch) {
+      const templateMatchNumber = Number(winnerMatch[1]);
+      const match = this.findMatchForTemplateNumber(
+        templateMatchNumber,
+        matchByNumber,
+      );
+
+      if (!match) {
+        throw new BadRequestException(
+          `Source match for "${sourceRef}" does not exist`,
+        );
+      }
+
+      return {
+        teamId: match.winnerTeamId?.toString(),
+        sourceType: BracketSourceType.MATCH_WINNER,
+        sourceRef: `WINNER_MATCH_${match.matchNumber}`,
+      };
+    }
+
+    const loserMatch = sourceRef.match(/^LOSER_MATCH_(\d+)$/);
+    if (loserMatch) {
+      const templateMatchNumber = Number(loserMatch[1]);
+      const match = this.findMatchForTemplateNumber(
+        templateMatchNumber,
+        matchByNumber,
+      );
+
+      if (!match) {
+        throw new BadRequestException(
+          `Source match for "${sourceRef}" does not exist`,
+        );
+      }
+
+      return {
+        teamId: match.loserTeamId?.toString(),
+        sourceType: BracketSourceType.MATCH_LOSER,
+        sourceRef: `LOSER_MATCH_${match.matchNumber}`,
+      };
+    }
+
+    throw new BadRequestException(`Invalid source ref "${sourceRef}"`);
+  }
+
+  validateTemplateSourceMatchesForScaffold(
+    template: KnockoutTemplateMatch[],
+    matchByNumber: Map<number, Match>,
+  ): void {
+    for (const templateMatch of template) {
+      this.resolveSourceRefForScaffold(templateMatch.homeSource, matchByNumber);
+      this.resolveSourceRefForScaffold(templateMatch.awaySource, matchByNumber);
+    }
+  }
+
+  resolveTemplateMatchForScaffold(
+    templateMatch: KnockoutTemplateMatch,
+    round: MatchRound,
+    matchByNumber: Map<number, Match>,
+    bracketPosition: number,
+  ): ResolvedTemplateMatch {
+    const home = this.resolveSourceRefForScaffold(
+      templateMatch.homeSource,
+      matchByNumber,
+    );
+    const away = this.resolveSourceRefForScaffold(
+      templateMatch.awaySource,
+      matchByNumber,
+    );
+
+    return {
+      round,
+      matchNumber: templateMatch.matchNumber,
+      bracketPosition,
+      homeTeamId: home.teamId,
+      awayTeamId: away.teamId,
+      homeSourceRef: home.sourceRef,
+      awaySourceRef: away.sourceRef,
+      homeSourceType: home.sourceType,
+      awaySourceType: away.sourceType,
+      matchDate: templateMatch.matchDate
+        ? new Date(templateMatch.matchDate)
+        : undefined,
+      stadium: templateMatch.stadium,
+    };
+  }
+
   validateTemplateSourceMatches(
     template: KnockoutTemplateMatch[],
     matchByNumber: Map<number, Match>,
@@ -567,7 +925,7 @@ export class KnockoutsService {
         stageCache.set(resolvedMatch.round, stage);
       }
 
-      const match = await this.matchModel.create({
+      const matchPayload: Record<string, unknown> = {
         tournamentId,
         stageId: stage._id,
         round: resolvedMatch.round,
@@ -575,14 +933,22 @@ export class KnockoutsService {
         bracketPosition: isBracketPositionRound(resolvedMatch.round)
           ? resolvedMatch.bracketPosition
           : undefined,
-        homeTeamId: resolvedMatch.homeTeamId,
-        awayTeamId: resolvedMatch.awayTeamId,
         status: MatchStatus.SCHEDULED,
         matchDate: resolvedMatch.matchDate,
         stadium: resolvedMatch.stadium,
-      });
+      };
 
-      await this.bracketSlotModel.insertMany([
+      if (resolvedMatch.homeTeamId) {
+        matchPayload.homeTeamId = resolvedMatch.homeTeamId;
+      }
+
+      if (resolvedMatch.awayTeamId) {
+        matchPayload.awayTeamId = resolvedMatch.awayTeamId;
+      }
+
+      const match = await this.matchModel.create(matchPayload);
+
+      const slotPayloads = [
         {
           tournamentId,
           stageId: stage._id,
@@ -591,7 +957,9 @@ export class KnockoutsService {
           slot: BracketSlotPosition.HOME,
           sourceType: resolvedMatch.homeSourceType,
           sourceRef: resolvedMatch.homeSourceRef,
-          teamId: resolvedMatch.homeTeamId,
+          ...(resolvedMatch.homeTeamId
+            ? { teamId: resolvedMatch.homeTeamId }
+            : {}),
         },
         {
           tournamentId,
@@ -601,9 +969,13 @@ export class KnockoutsService {
           slot: BracketSlotPosition.AWAY,
           sourceType: resolvedMatch.awaySourceType,
           sourceRef: resolvedMatch.awaySourceRef,
-          teamId: resolvedMatch.awayTeamId,
+          ...(resolvedMatch.awayTeamId
+            ? { teamId: resolvedMatch.awayTeamId }
+            : {}),
         },
-      ]);
+      ];
+
+      await this.bracketSlotModel.insertMany(slotPayloads);
 
       const populatedMatch = await this.matchModel
         .findById(match._id)
@@ -617,6 +989,116 @@ export class KnockoutsService {
     }
 
     return createdMatches;
+  }
+
+  private findMatchForTemplateNumber(
+    templateMatchNumber: number,
+    matchByNumber: Map<number, Match>,
+  ): Match | undefined {
+    const direct = matchByNumber.get(templateMatchNumber);
+    if (direct) {
+      return direct;
+    }
+
+    const range = TEMPLATE_MATCH_RANGES.find(
+      (entry) =>
+        templateMatchNumber >= entry.start &&
+        templateMatchNumber < entry.start + entry.count,
+    );
+
+    if (!range) {
+      return undefined;
+    }
+
+    const index = templateMatchNumber - range.start;
+    const roundMatches = [...matchByNumber.values()]
+      .filter((match) => match.round === range.round)
+      .sort((left, right) => this.compareBracketOrder(left, right));
+
+    return roundMatches[index];
+  }
+
+  private compareBracketOrder(left: Match, right: Match): number {
+    const leftPosition = left.bracketPosition ?? Number.MAX_SAFE_INTEGER;
+    const rightPosition = right.bracketPosition ?? Number.MAX_SAFE_INTEGER;
+
+    if (leftPosition !== rightPosition) {
+      return leftPosition - rightPosition;
+    }
+
+    return left.matchNumber - right.matchNumber;
+  }
+
+  private getKnockoutRoundsFrom(fromRound: MatchRound): MatchRound[] {
+    const startIndex = KNOCKOUT_RESET_ORDER.indexOf(fromRound);
+
+    if (startIndex === -1) {
+      throw new BadRequestException(`Invalid knockout round "${fromRound}"`);
+    }
+
+    return KNOCKOUT_RESET_ORDER.slice(startIndex);
+  }
+
+  private getScaffoldTemplatesFrom(fromRound: MatchRound) {
+    const startIndex = KNOCKOUT_RESET_ORDER.indexOf(fromRound);
+
+    return SCAFFOLD_ROUND_TEMPLATES.filter((roundTemplate) => {
+      const roundIndex = KNOCKOUT_RESET_ORDER.indexOf(roundTemplate.round);
+      return roundIndex >= startIndex;
+    });
+  }
+
+  private async repropagateFeederRounds(
+    tournamentId: string,
+    fromRound: MatchRound,
+  ): Promise<void> {
+    const startIndex = KNOCKOUT_RESET_ORDER.indexOf(fromRound);
+    const feederRounds = KNOCKOUT_RESET_ORDER.slice(0, startIndex);
+
+    if (feederRounds.length === 0) {
+      return;
+    }
+
+    const completedMatches = await this.matchModel
+      .find({
+        tournamentId,
+        round: { $in: feederRounds },
+        status: MatchStatus.COMPLETED,
+      })
+      .exec();
+
+    for (const match of completedMatches) {
+      await this.propagateMatchOutcome(match);
+    }
+  }
+
+  private async fillBracketSlot(
+    slot: BracketSlot,
+    teamId: mongoose.Types.ObjectId,
+  ): Promise<void> {
+    await this.bracketSlotModel
+      .updateOne({ _id: slot._id }, { teamId })
+      .exec();
+
+    const updateField =
+      slot.slot === BracketSlotPosition.HOME ? 'homeTeamId' : 'awayTeamId';
+
+    await this.matchModel
+      .updateOne({ _id: slot.matchId }, { [updateField]: teamId })
+      .exec();
+  }
+
+  private async clearBracketSlot(slot: BracketSlot): Promise<void> {
+    await this.bracketSlotModel
+      .updateOne({ _id: slot._id }, { $unset: { teamId: '' } })
+      .exec();
+
+    const updateField =
+      slot.slot === BracketSlotPosition.HOME ? 'homeTeamId' : 'awayTeamId';
+
+    await this.matchModel
+      .updateOne({ _id: slot.matchId }, { $unset: { [updateField]: '' } })
+      .exec();
   }
 
   private getCompletedSourceMatch(

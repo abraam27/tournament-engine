@@ -1,5 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import {
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';import {
   ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
@@ -13,11 +12,45 @@ import { KnockoutBracketResponseDto } from 'src/common/swagger/swagger-response.
 
 import { KnockoutsService } from './knockouts.service';
 import { GenerateNextRoundDto } from './dto/generate-next-round.dto';
-
+import { ResetKnockoutFromStageDto } from './dto/reset-knockout-from-stage.dto';
 @Controller('knockouts')
 @ApiTags('Knockouts')
 export class KnockoutsController {
   constructor(private readonly knockoutsService: KnockoutsService) {}
+
+  @Post('tournaments/:tournamentId/scaffold-bracket')
+  @ApiOperation({
+    summary:
+      'Create all downstream knockout matches (R16 through Final) with TBD slots',
+  })
+  @ApiParam({ name: 'tournamentId', description: 'Tournament MongoId' })
+  @ApiCreatedResponse({
+    description: 'Knockout bracket scaffolded through the final',
+  })
+  scaffoldKnockoutBracket(@Param('tournamentId') tournamentId: string) {
+    return this.knockoutsService.scaffoldKnockoutBracket(tournamentId);
+  }
+
+  @Post('tournaments/:tournamentId/reset-from-stage')
+  @ApiOperation({
+    summary:
+      'Delete knockout matches from a stage onwards and optionally regenerate them',
+  })
+  @ApiParam({ name: 'tournamentId', description: 'Tournament MongoId' })
+  @ApiBody({ type: ResetKnockoutFromStageDto })
+  @ApiCreatedResponse({
+    description: 'Knockout stage reset (and optionally regenerated)',
+  })
+  resetKnockoutFromStage(
+    @Param('tournamentId') tournamentId: string,
+    @Body() dto: ResetKnockoutFromStageDto,
+  ) {
+    return this.knockoutsService.resetKnockoutFromStage(
+      tournamentId,
+      dto.fromRound,
+      dto.regenerate ?? true,
+    );
+  }
 
   @Post('tournaments/:tournamentId/generate-next-round')
   @ApiOperation({ summary: 'Generate the next knockout round from completed matches' })

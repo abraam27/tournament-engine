@@ -41,18 +41,18 @@ export class Match extends Document {
   bracketPosition?: number;
 
   @Prop({
-    required: true,
+    required: false,
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Team',
   })
-  homeTeamId: mongoose.Types.ObjectId;
+  homeTeamId?: mongoose.Types.ObjectId;
 
   @Prop({
-    required: true,
+    required: false,
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Team',
   })
-  awayTeamId: mongoose.Types.ObjectId;
+  awayTeamId?: mongoose.Types.ObjectId;
 
   @Prop({ required: false, type: Number, min: 0 })
   homeScore?: number;

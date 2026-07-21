@@ -49,12 +49,14 @@ export class CreateMatchDto {
   bracketPosition?: number;
 
   @ApiProperty({ example: '64f1a2b3c4d5e6f7a8b9c0d3' })
+  @ValidateIf((dto: CreateMatchDto) => !!dto.homeTeamId || dto.round === MatchRound.GROUP)
   @IsMongoId()
-  homeTeamId: string;
+  homeTeamId?: string;
 
   @ApiProperty({ example: '64f1a2b3c4d5e6f7a8b9c0d4' })
+  @ValidateIf((dto: CreateMatchDto) => !!dto.awayTeamId || dto.round === MatchRound.GROUP)
   @IsMongoId()
-  awayTeamId: string;
+  awayTeamId?: string;
 
   @ApiPropertyOptional({ example: 0 })
   @IsOptional()

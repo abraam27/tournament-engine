@@ -9,12 +9,14 @@ import {
   BracketSlotSchema,
 } from 'src/bracket-slots/bracket-slot.schema';
 import { StandingsModule } from 'src/standings/standings.module';
+import { KnockoutsModule } from 'src/knockouts/knockouts.module';
 import { BracketsController } from './brackets.controller';
 import { BracketsService } from './brackets.service';
 
 @Module({
   imports: [
     StandingsModule,
+    KnockoutsModule,
     MongooseModule.forFeature([
       { name: Match.name, schema: MatchSchema },
       { name: Tournament.name, schema: TournamentSchema },

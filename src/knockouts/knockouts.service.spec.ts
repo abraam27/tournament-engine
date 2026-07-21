@@ -31,7 +31,11 @@ describe('KnockoutsService', () => {
   };
   let tournamentModel: { findById: jest.Mock };
   let stageModel: { findOne: jest.Mock; create: jest.Mock };
-  let bracketSlotModel: { insertMany: jest.Mock };
+  let bracketSlotModel: {
+    insertMany: jest.Mock;
+    find: jest.Mock;
+    updateOne: jest.Mock;
+  };
 
   const createKnockoutMatch = (
     matchNumber: number,
@@ -78,10 +82,15 @@ describe('KnockoutsService', () => {
       findOne: jest.fn(),
       create: jest.fn(),
       findById: jest.fn(),
+      updateOne: jest.fn(),
     };
     tournamentModel = { findById: jest.fn() };
     stageModel = { findOne: jest.fn(), create: jest.fn() };
-    bracketSlotModel = { insertMany: jest.fn() };
+    bracketSlotModel = {
+      insertMany: jest.fn(),
+      find: jest.fn(),
+      updateOne: jest.fn(),
+    };
 
     service = new KnockoutsService(
       matchModel as never,
@@ -550,6 +559,42 @@ describe('KnockoutsService', () => {
       await expect(
         service.generateNextRound(tournamentId, MatchRound.ROUND_32),
       ).rejects.toThrow(/must be completed/);
+    });
+  });
+
+  describe('propagateMatchOutcome', () => {
+    it('fills downstream bracket slot when a knockout match is completed', async () => {
+      const completedMatch = createCompletedMatch(73, winnerTeamId, loserTeamId);
+      const downstreamMatchId = new Types.ObjectId();
+      const slotId = new Types.ObjectId();
+
+      bracketSlotModel.find.mockReturnValue({
+        exec: jest.fn().mockResolvedValue([
+          {
+            _id: slotId,
+            matchId: downstreamMatchId,
+            slot: 'home',
+            sourceRef: 'WINNER_MATCH_73',
+          },
+        ]),
+      });
+      bracketSlotModel.updateOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue({}),
+      });
+      matchModel.updateOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue({}),
+      });
+
+      await service.propagateMatchOutcome(completedMatch);
+
+      expect(bracketSlotModel.updateOne).toHaveBeenCalledWith(
+        { _id: slotId },
+        { teamId: winnerTeamId },
+      );
+      expect(matchModel.updateOne).toHaveBeenCalledWith(
+        { _id: downstreamMatchId },
+        { homeTeamId: winnerTeamId },
+      );
     });
   });
 });

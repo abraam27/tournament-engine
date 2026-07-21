@@ -51,7 +51,16 @@ export class StandingsService {
 
     const standings = this.calculateStandings(
       this.mapGroupTeams(groupTeams),
-      this.mapCompletedMatches(completedMatches),
+      this.mapCompletedMatches(
+        completedMatches.filter(
+          (
+            match,
+          ): match is typeof match & {
+            homeTeamId: NonNullable<typeof match.homeTeamId>;
+            awayTeamId: NonNullable<typeof match.awayTeamId>;
+          } => Boolean(match.homeTeamId && match.awayTeamId),
+        ),
+      ),
     );
 
     return {

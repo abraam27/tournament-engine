@@ -41,18 +41,32 @@ export class MatchesService {
   ) {}
 
   async create(createMatchDto: CreateMatchDto): Promise<Match> {
-    this.assertTeamsAreDifferent(
-      createMatchDto.homeTeamId,
-      createMatchDto.awayTeamId,
-    );
+    if (createMatchDto.round === MatchRound.GROUP) {
+      if (!createMatchDto.homeTeamId || !createMatchDto.awayTeamId) {
+        throw new BadRequestException(
+          'Group matches require home and away teams',
+        );
+      }
+    }
+
+    if (createMatchDto.homeTeamId && createMatchDto.awayTeamId) {
+      this.assertTeamsAreDifferent(
+        createMatchDto.homeTeamId,
+        createMatchDto.awayTeamId,
+      );
+    }
 
     if (createMatchDto.round === MatchRound.GROUP && !createMatchDto.groupId) {
       throw new BadRequestException('groupId is required when round is group');
     }
 
     await this.validateTournamentExists(createMatchDto.tournamentId);
-    await this.validateTeamExists(createMatchDto.homeTeamId, 'homeTeamId');
-    await this.validateTeamExists(createMatchDto.awayTeamId, 'awayTeamId');
+    if (createMatchDto.homeTeamId) {
+      await this.validateTeamExists(createMatchDto.homeTeamId, 'homeTeamId');
+    }
+    if (createMatchDto.awayTeamId) {
+      await this.validateTeamExists(createMatchDto.awayTeamId, 'awayTeamId');
+    }
 
     if (createMatchDto.groupId) {
       await this.validateGroupBelongsToTournament(
@@ -61,8 +75,8 @@ export class MatchesService {
       );
       await this.assertNoDuplicateGroupFixture(
         createMatchDto.groupId,
-        createMatchDto.homeTeamId,
-        createMatchDto.awayTeamId,
+        createMatchDto.homeTeamId!,
+        createMatchDto.awayTeamId!,
       );
     }
 
@@ -160,6 +174,14 @@ export class MatchesService {
       );
     }
 
+    if (match.round !== MatchRound.GROUP) {
+      if (!match.homeTeamId || !match.awayTeamId) {
+        throw new BadRequestException(
+          'Both teams must be assigned before submitting a knockout result',
+        );
+      }
+    }
+
     const { homeScore, awayScore } = submitMatchResultDto;
     const updatePayload: Record<string, unknown> = {
       homeScore,
@@ -197,6 +219,13 @@ export class MatchesService {
       })
       .exec();
 
+    if (match.round !== MatchRound.GROUP) {
+      const completedMatch = await this.matchModel.findById(id).exec();
+      if (completedMatch) {
+        await this.knockoutsService.propagateMatchOutcome(completedMatch);
+      }
+    }
+
     return this.findOne(id);
   }
 
@@ -220,6 +249,10 @@ export class MatchesService {
       throw new BadRequestException(
         'Only completed or live matches can have their result reset',
       );
+    }
+
+    if (match.round !== MatchRound.GROUP) {
+      await this.knockoutsService.rollbackMatchOutcome(match);
     }
 
     await this.matchModel
@@ -272,6 +305,12 @@ export class MatchesService {
     }
 
     if (updateMatchDto.homeTeamId || updateMatchDto.awayTeamId) {
+      if (!match.homeTeamId || !match.awayTeamId) {
+        throw new BadRequestException(
+          'Both teams must be assigned before updating match teams',
+        );
+      }
+
       const newHomeTeamId =
         updateMatchDto.homeTeamId ?? match.homeTeamId.toString();
       const newAwayTeamId =
@@ -315,6 +354,12 @@ export class MatchesService {
     }
 
     this.ensureMatchCanBeUpdated(match);
+
+    if (!match.homeTeamId || !match.awayTeamId) {
+      throw new BadRequestException(
+        'Both teams must be assigned before swapping sides',
+      );
+    }
 
     const updatePayload: Record<string, unknown> = {
       homeTeamId: match.awayTeamId,
@@ -606,7 +651,7 @@ export class MatchesService {
       'penaltiesAwayScore',
     );
 
-    if (match.winnerTeamId) {
+    if (match.winnerTeamId && match.homeTeamId && match.awayTeamId) {
       const winnerId = match.winnerTeamId.toString();
       const homeId = match.homeTeamId.toString();
       const awayId = match.awayTeamId.toString();
@@ -618,7 +663,7 @@ export class MatchesService {
       }
     }
 
-    if (match.loserTeamId) {
+    if (match.loserTeamId && match.homeTeamId && match.awayTeamId) {
       const loserId = match.loserTeamId.toString();
       const homeId = match.homeTeamId.toString();
       const awayId = match.awayTeamId.toString();

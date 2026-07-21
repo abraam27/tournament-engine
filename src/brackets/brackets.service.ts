@@ -30,6 +30,7 @@ import {
   ResolvedBracketSlot,
 } from './interfaces/resolved-bracket-match.interface';
 import { StandingRow } from 'src/standings/interfaces/standing-row.interface';
+import { KnockoutsService } from 'src/knockouts/knockouts.service';
 
 const KNOCKOUT_ROUNDS = [
   MatchRound.ROUND_32,
@@ -51,6 +52,7 @@ export class BracketsService {
     @InjectModel(BracketSlot.name)
     private readonly bracketSlotModel: Model<BracketSlot>,
     private readonly standingsService: StandingsService,
+    private readonly knockoutsService: KnockoutsService,
   ) {}
 
   async generateRoundOf32(tournamentId: string) {
@@ -177,11 +179,23 @@ export class BracketsService {
       }
     }
 
+    let scaffoldedMatchesCount = 0;
+    try {
+      const scaffoldResult =
+        await this.knockoutsService.scaffoldKnockoutBracket(tournamentId);
+      scaffoldedMatchesCount = scaffoldResult.createdMatchesCount;
+    } catch (error) {
+      if (!(error instanceof ConflictException)) {
+        throw error;
+      }
+    }
+
     return {
       tournamentId,
       stageId: stage._id.toString(),
       round: MatchRound.ROUND_32,
       createdMatchesCount: createdMatches.length,
+      scaffoldedMatchesCount,
       matches: createdMatches,
       qualifiedTeams: qualifiedTeamsMap,
     };
